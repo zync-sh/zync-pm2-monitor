@@ -48,7 +48,7 @@ See [testing](docs/TESTING.md) for evidence and remaining release checks; [archi
 
 ## Release status
 
-See [stable release workflow](docs/RELEASING.md) for tag-triggered candidates, manual publisher signing, protected signed-release promotion and offline registry publication.
+See [stable release workflow](docs/RELEASING.md) for tag-triggered tests, protected automatic publisher signing, signed GitHub releases and separate offline registry publication.
 
 Version 2.0.0 is prepared for stable release, retaining `com.zync.plugin.pm2-monitor`. Its repository is `zync-sh/zync-pm2-monitor`; the build scripts do not publish GitHub releases. It uses published `@zync-sh/plugin-sdk@2.1.0-beta.1` and `@zync-sh/plugin-ui@0.1.0-beta.1`. Publication still requires publisher signing, trusted registry staging, and a released compatible API 2.1 host. Keep the legacy listing unchanged so older clients remain supported.
 

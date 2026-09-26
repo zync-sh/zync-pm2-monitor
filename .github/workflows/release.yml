@@ -1,4 +1,4 @@
-name: Prepare plugin release
+name: Release signed plugin
 on:
   push:
     tags: ["v*.*.*"]
@@ -22,25 +22,60 @@ jobs:
       - run: npx playwright install --with-deps chromium
       - run: npm run test:ui
       - name: Prepare clean candidate
+        id: stage
         env:
           RELEASE_TAG: ${{ github.ref_name }}
-        run: node scripts/release.mjs stage "$RELEASE_TAG"
+        run: |
+          node scripts/release.mjs stage "$RELEASE_TAG"
+          echo "directory=.release/candidate-${RELEASE_TAG#v}" >> "$GITHUB_OUTPUT"
       - uses: actions/upload-artifact@v4
         with:
           name: pm2-release-candidate
-          path: .release/candidate-*/
+          path: ${{ steps.stage.outputs.directory }}/
           if-no-files-found: error
-  draft:
+  sign:
     needs: candidate
+    runs-on: ubuntu-latest
+    environment: plugin-release
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - uses: actions/download-artifact@v4
+        with:
+          name: pm2-release-candidate
+          path: candidate
+      - name: Sign and verify tested candidate
+        id: sign
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+          PM2_PUBLISHER_PRIVATE_KEY: ${{ secrets.PM2_PUBLISHER_PRIVATE_KEY }}
+          PM2_PUBLISHER_KEY_PASSPHRASE: ${{ secrets.PM2_PUBLISHER_KEY_PASSPHRASE }}
+          PM2_PUBLISHER_KEY_ID: ${{ vars.PM2_PUBLISHER_KEY_ID }}
+        run: |
+          node scripts/sign-release.mjs "$RELEASE_TAG" candidate/source
+          echo "directory=.release/verified-${RELEASE_TAG#v}" >> "$GITHUB_OUTPUT"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: verified-pm2-release
+          path: ${{ steps.sign.outputs.directory }}/
+          if-no-files-found: error
+  publish:
+    needs: sign
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
       - uses: actions/download-artifact@v4
         with:
-          name: pm2-release-candidate
-          path: candidate
-      - name: Create draft with unsigned signing candidate
+          name: verified-pm2-release
+          path: verified
+      - name: Publish verified signed release
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
@@ -50,4 +85,4 @@ jobs:
             echo 'Release already exists. Refusing to replace its assets.' >&2
             exit 1
           fi
-          gh release create "$RELEASE_TAG" candidate/*-candidate.zip candidate/*.sha256 --verify-tag --draft --title "PM2 Monitor $RELEASE_TAG" --notes 'Unsigned candidate only. Download, sign offline, upload the signed ZIP to this draft, then run Promote signed plugin release. Do not install this candidate as a trusted marketplace release.'
+          gh release create "$RELEASE_TAG" verified/*-signed.zip verified/*-signed.zip.sha256 --verify-tag --title "PM2 Monitor $RELEASE_TAG" --notes 'Signed PM2 Monitor package. Requires Zync 2.33.0+ with Plugin API 2.1. Trusted marketplace availability requires separate registry signing and publication. Signature verification does not establish plugin behavior safety.'

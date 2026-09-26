@@ -162,7 +162,7 @@ export function verifyRelease(zipPath, tag, expectedKeyId, directory = ".") {
   return { version, entries, manifest, sha256: sha(zip), keyId: expectedKeyId };
 }
 
-function prepareRegistryInput(result, directory) {
+export function prepareRegistryInput(result, directory) {
   const output = path.join(directory, ".release", `verified-${result.version}`);
   fs.mkdirSync(path.dirname(output), { recursive: true });
   fs.mkdirSync(output);
