@@ -1,0 +1,89 @@
+/* Theme and control styles are supplied by @zync-sh/plugin-ui. */
+:root {
+  --background: var(--zui-background);
+  --surface: var(--zui-surface);
+  --border: var(--zui-border);
+  --text: var(--zui-text);
+  --muted: var(--zui-muted);
+  --primary: var(--zui-primary);
+  --positive: var(--zui-positive);
+  --negative: var(--zui-negative);
+  --warning: var(--zui-warning);
+  --info: var(--zui-info);
+  --radius: 8px;
+  font-size: 13px;
+}
+* {
+  box-sizing: border-box;
+}
+html,
+body {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+}
+body {
+  container: monitor / inline-size;
+}
+h1,
+h2,
+h3,
+p {
+  margin: 0;
+}
+h2 {
+  font-size: 14px;
+}
+[hidden] {
+  display: none !important;
+}
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+.icon-button {
+  display: grid;
+  place-items: center;
+  width: 29px;
+  height: 29px;
+  padding: 0;
+  border-color: transparent;
+  background: transparent;
+  color: var(--muted);
+  font-size: 17px;
+}
+.icon-button:hover:not(:disabled) {
+  color: var(--text);
+}
+.danger {
+  color: var(--negative);
+}
+.warning {
+  color: var(--warning);
+}
+.dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--muted);
+  flex: 0 0 auto;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .status-pill {
+    transition:
+      background-color 120ms ease,
+      border-color 120ms ease,
+      color 120ms ease;
+  }
+  .meter-fill {
+    transition: width 180ms ease;
+  }
+}

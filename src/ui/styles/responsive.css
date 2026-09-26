@@ -1,0 +1,62 @@
+@container monitor (min-width: 900px) {
+  .app[data-detail-open="true"] .process-side {
+    flex: 0 0 43%;
+    border-right: 1px solid var(--border);
+  }
+  .app[data-detail-open="true"] .details {
+    border-left: 0;
+  }
+  .app[data-detail-open="true"] .detail-stats {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+@container monitor (max-width: 899px) {
+  .app[data-detail-open="true"] .process-side {
+    display: none;
+  }
+  .app[data-detail-open="true"] .details {
+    border-left: 0;
+  }
+  .updated-label {
+    display: none;
+  }
+}
+@container monitor (max-width: 530px) {
+  .toolbar {
+    padding: 0 8px;
+  }
+  .connection-state {
+    display: none;
+  }
+  .list-toolbar {
+    flex-wrap: wrap;
+    padding: 7px 9px;
+  }
+  .search {
+    flex-basis: 100%;
+  }
+  .list-toolbar .select-control {
+    flex: 1;
+    max-width: none;
+  }
+  .zui-root .metric {
+    padding: 6px 5px;
+    min-height: 42px;
+  }
+  .metric strong {
+    font-size: 16px;
+  }
+  .metric span {
+    font-size: 9px;
+  }
+  .detail-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  button {
+    transition:
+      background 0.12s,
+      color 0.12s;
+  }
+}

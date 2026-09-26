@@ -1,0 +1,433 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>PM2 Monitor</title>
+    <!-- STYLES -->
+  </head>
+  <body class="zui-root">
+    <main class="app" data-detail-open="false">
+      <header class="toolbar">
+        <div class="brand">
+          <span class="brand-mark" role="img" aria-label="PM2 Monitor"
+            ><!-- PROCESS ICON --></span
+          >
+          <span
+            id="server-name"
+            class="server-name"
+            data-tooltip="This pane's server"
+            >This server</span
+          >
+          <span id="connection-state" class="connection-state"
+            ><i class="dot"></i>Connecting</span
+          >
+        </div>
+        <div class="toolbar-actions">
+          <button
+            id="density"
+            class="density-toggle"
+            aria-label="Compact process rows"
+            aria-pressed="false"
+            data-tooltip="Reduce row spacing; same process data"
+          >
+            Compact
+          </button>
+          <span id="updated-label" class="updated-label"></span>
+          <button
+            id="settings-toggle"
+            class="icon-button"
+            aria-label="Connection settings"
+            data-tooltip="Connection settings"
+            aria-expanded="false"
+            aria-controls="settings"
+          >
+            ⚙
+          </button>
+          <button
+            id="pause"
+            class="icon-button"
+            aria-label="Pause auto-refresh"
+            data-tooltip="Pause auto-refresh"
+            aria-pressed="false"
+          >
+            ◉
+          </button>
+          <button
+            id="refresh"
+            class="icon-button"
+            aria-label="Refresh PM2 state"
+            data-tooltip="Refresh PM2 state"
+          >
+            ↻
+          </button>
+        </div>
+      </header>
+      <section
+        id="settings"
+        class="settings"
+        aria-label="Connection settings"
+        hidden
+      >
+        <label
+          >PM2 executable<input
+            id="program"
+            value="pm2"
+            placeholder="pm2 or /absolute/path/to/pm2"
+            spellcheck="false"
+            maxlength="512"
+        /></label>
+        <label
+          >Node.js executable (optional)<input
+            id="node-program"
+            placeholder="/absolute/path/to/node"
+            spellcheck="false"
+            maxlength="512"
+        /></label>
+        <button id="apply-settings">Apply</button>
+        <p>
+          Commands run through this pane's SSH connection. If PM2 was installed
+          with nvm, enter absolute paths for PM2 and Node.js. These settings
+          last for this pane session.
+        </p>
+      </section>
+      <div class="workspace">
+        <section class="process-side" aria-label="PM2 processes">
+          <section class="metrics" aria-label="Process overview">
+            <button class="metric" data-filter="all" aria-pressed="true">
+              <strong id="total">—</strong><span>Total</span>
+            </button>
+            <button class="metric" data-filter="online" aria-pressed="false">
+              <strong id="online">—</strong><span>Online</span>
+            </button>
+            <button class="metric" data-filter="stopped" aria-pressed="false">
+              <strong id="stopped">—</strong><span>Stopped</span>
+            </button>
+            <button class="metric" data-filter="errored" aria-pressed="false">
+              <strong id="attention">—</strong><span>Errored</span>
+            </button>
+          </section>
+          <div class="list-toolbar">
+            <label class="search"
+              ><span aria-hidden="true"
+                ><svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.75"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <circle cx="10.5" cy="10.5" r="6.5" />
+                  <path d="m16 16 4.5 4.5" /></svg
+              ></span>
+              <input
+                id="search"
+                type="search"
+                placeholder="Filter by name, ID or status"
+                aria-label="Search processes"
+            /></label>
+            <select id="status" aria-label="Filter by status">
+              <option value="all">All statuses</option>
+              <option value="online">Online</option>
+              <option value="stopped">Stopped</option>
+              <option value="errored">Errored</option>
+            </select>
+            <select id="sort" aria-label="Sort processes">
+              <option value="name">Name A–Z</option>
+              <option value="cpu">Highest CPU</option>
+              <option value="memory">Highest memory</option>
+              <option value="restarts">Most restarts</option>
+            </select>
+          </div>
+          <div id="notice" class="notice" role="status" hidden></div>
+          <section
+            id="bulk"
+            class="bulk"
+            aria-label="Selected process actions"
+            hidden
+          >
+            <strong id="selection-count"></strong>
+            <button data-action="start">Start</button
+            ><button data-action="restart">Restart</button
+            ><button data-action="reload">Reload</button
+            ><button data-action="stop">Stop</button
+            ><button data-action="delete" class="danger">Delete</button
+            ><button id="clear-selection">Clear</button>
+          </section>
+          <section class="process-list" aria-label="Processes">
+            <div class="table-scroll">
+              <table>
+                <thead>
+                  <tr>
+                    <th class="check-cell">
+                      <input
+                        id="select-all"
+                        type="checkbox"
+                        aria-label="Select visible processes"
+                      />
+                    </th>
+                    <th>ID</th>
+                    <th>Process</th>
+                    <th>Status</th>
+                    <th>Mode</th>
+                    <th>PID</th>
+                    <th>Uptime</th>
+                    <th>↺</th>
+                    <th>CPU</th>
+                    <th>Memory</th>
+                    <th class="action-cell">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="rows"></tbody>
+              </table>
+            </div>
+            <div id="empty" class="empty">
+              <span class="empty-icon" aria-hidden="true"
+                ><!-- PROCESS ICON --></span
+              >
+              <h2 id="empty-title">Connecting to PM2</h2>
+              <p id="empty-description">
+                Reading processes from this pane's server.
+              </p>
+              <pre id="empty-error" hidden></pre>
+              <div class="empty-actions">
+                <button id="empty-settings" hidden>Executable settings</button>
+                <button id="empty-retry">Check again</button>
+                <button id="empty-clear" hidden>Clear filters</button>
+              </div>
+              <div id="loading-skeleton" aria-hidden="true" hidden>
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+              </div>
+            </div>
+          </section>
+          <footer class="list-footer">
+            <span id="process-count">Waiting for server</span
+            ><button id="save">Save process list…</button>
+          </footer>
+        </section>
+        <aside id="details" class="details" aria-label="Process details" hidden>
+          <div class="detail-heading">
+            <button
+              id="close-details"
+              class="icon-button"
+              aria-label="Back to process list"
+              data-tooltip="Back to process list"
+            >
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <path d="m15 6-6 6 6 6" />
+              </svg>
+            </button>
+            <div class="detail-title">
+              <h2 id="detail-name"></h2>
+              <span id="detail-id" class="eyebrow"></span>
+            </div>
+            <span id="detail-status"></span>
+          </div>
+          <div id="detail-actions" class="detail-actions">
+            <button data-action="start">Start</button
+            ><button data-action="restart">Restart</button
+            ><button data-action="reload">Reload</button
+            ><button data-action="stop">Stop</button
+            ><button data-action="delete" class="danger">Delete</button>
+          </div>
+          <div
+            class="detail-tabs"
+            role="tablist"
+            aria-label="Process information"
+          >
+            <button
+              class="detail-tab"
+              data-tab="overview"
+              role="tab"
+              aria-selected="true"
+            >
+              Overview
+            </button>
+            <button
+              class="detail-tab"
+              data-tab="logs"
+              role="tab"
+              aria-selected="false"
+            >
+              Logs
+            </button>
+            <button
+              class="detail-tab"
+              data-tab="environment"
+              role="tab"
+              aria-selected="false"
+            >
+              Environment
+            </button>
+          </div>
+          <section id="detail-overview" class="detail-panel" role="tabpanel">
+            <ul
+              id="process-diagnostics"
+              class="process-diagnostics"
+              aria-label="Process diagnostics"
+              hidden
+            ></ul>
+            <div class="detail-stats">
+              <div><span>CPU</span><strong id="detail-cpu">—</strong></div>
+              <div>
+                <span>Memory</span><strong id="detail-memory">—</strong>
+              </div>
+              <div>
+                <span>Uptime</span><strong id="detail-uptime">—</strong>
+              </div>
+              <div>
+                <span>Restarts</span><strong id="detail-restarts">—</strong>
+              </div>
+              <div>
+                <span>Instances</span><strong id="detail-instances">—</strong>
+              </div>
+              <div><span>Mode</span><strong id="detail-mode">—</strong></div>
+            </div>
+            <section
+              class="metric-history"
+              aria-label="Sampled process metrics"
+            >
+              <div>
+                <h3>CPU history</h3>
+                <div id="history-cpu"></div>
+              </div>
+              <div>
+                <h3>Memory history</h3>
+                <div id="history-memory"></div>
+              </div>
+              <small id="history-status"></small>
+            </section>
+            <dl id="detail-fields" class="detail-fields"></dl>
+            <dl id="detail-runtime" class="detail-fields"></dl>
+          </section>
+          <section
+            id="detail-environment"
+            class="detail-panel environment-panel"
+            role="tabpanel"
+            hidden
+          >
+            <p>
+              PM2's environment can contain credentials. This plugin does not
+              transfer environment values into the pane.
+            </p>
+            <p>
+              Use the server terminal when you need to inspect an individual
+              process's environment.
+            </p>
+          </section>
+          <section
+            id="detail-logs"
+            class="detail-panel logs"
+            role="tabpanel"
+            aria-label="Recent process logs"
+            hidden
+          >
+            <div class="log-controls">
+              <select id="log-stream" aria-label="Log stream">
+                <option value="all">All output</option>
+                <option value="out">Standard output</option>
+                <option value="err">Errors only</option>
+              </select>
+              <label class="log-wrap-control"
+                ><input id="log-wrap" type="checkbox" checked /> Wrap
+                lines</label
+              >
+              <label
+                ><input id="follow-logs" type="checkbox" /> Auto-refresh</label
+              >
+              <div class="log-actions">
+                <button
+                  id="load-logs"
+                  class="icon-button"
+                  aria-label="Load logs"
+                  data-tooltip="Load logs"
+                >
+                  ↻
+                </button>
+                <button
+                  id="copy-logs"
+                  class="icon-button"
+                  aria-label="Copy visible logs"
+                  data-tooltip="Copy visible logs"
+                >
+                  ▣
+                </button>
+                <button
+                  id="export-logs"
+                  class="icon-button"
+                  aria-label="Export visible log snapshot"
+                  data-tooltip="Export visible log snapshot to your computer"
+                >
+                  Export
+                </button>
+                <button
+                  id="clear-logs"
+                  class="icon-button"
+                  aria-label="Clear displayed logs"
+                  data-tooltip="Clear displayed logs"
+                >
+                  ⌫
+                </button>
+                <button
+                  id="expand-logs"
+                  class="icon-button"
+                  aria-label="Expand log view"
+                  data-tooltip="Expand log view"
+                >
+                  ⛶
+                </button>
+                <button
+                  id="jump-logs"
+                  class="icon-button"
+                  aria-label="Jump to latest logs"
+                  data-tooltip="Jump to latest logs"
+                >
+                  Latest
+                </button>
+              </div>
+            </div>
+            <input
+              id="log-search"
+              type="search"
+              placeholder="Search logs"
+              aria-label="Filter log lines"
+            />
+            <pre id="log-content" tabindex="0">
+Load the last 100 lines. Logs may contain sensitive application data.</pre>
+            <div class="log-footer">
+              <small id="log-count">0 lines</small>
+              <small id="log-status"
+                >Snapshots only · no persistent log stream</small
+              >
+            </div>
+          </section>
+        </aside>
+      </div>
+      <span id="health" role="status" class="sr-only">Connecting to PM2…</span>
+      <select id="interval" aria-label="Refresh interval" hidden>
+        <option value="10000" selected>10s</option>
+        <option value="30000">30s</option>
+        <option value="60000">60s</option>
+        <option value="0">Manual</option>
+      </select>
+    </main>
+    <!-- SCRIPT -->
+  </body>
+</html>
