@@ -21,7 +21,9 @@ async function open(page, setup = "", delay = 30) {
   );
 }
 
-test("shared controls preserve flat names, ring selection and compact overview bounds", async ({ page }) => {
+test("shared controls preserve flat names, ring selection and compact overview bounds", async ({
+  page,
+}) => {
   for (const width of [320, 530, 1280]) {
     await page.setViewportSize({ width, height: 700 });
     await open(page);
@@ -32,7 +34,11 @@ test("shared controls preserve flat names, ring selection and compact overview b
       const selected = getComputedStyle(metrics[0]);
       const name = getComputedStyle(document.querySelector(".process-name"));
       return {
-        fits: metrics.every(item => item.getBoundingClientRect().right <= bounds.right && item.getBoundingClientRect().left >= bounds.left),
+        fits: metrics.every(
+          (item) =>
+            item.getBoundingClientRect().right <= bounds.right &&
+            item.getBoundingClientRect().left >= bounds.left,
+        ),
         height: bounds.height,
         ring: selected.boxShadow,
         nameBackground: name.backgroundColor,
@@ -46,9 +52,20 @@ test("shared controls preserve flat names, ring selection and compact overview b
     expect(layout.nameBorder).toBe("0px");
     await page.locator(".process-name").first().click();
     const details = await page.evaluate(() => {
-      const tab = getComputedStyle(document.querySelector('.detail-tab[aria-selected="true"]'));
-      const action = getComputedStyle(document.querySelector('.detail-actions button[data-action="delete"]'));
-      return { tabBackground: tab.backgroundColor, tabTopBorder: tab.borderTopWidth, tabIndicator: tab.borderBottomWidth, actionBackground: action.backgroundColor, danger: action.color, text: getComputedStyle(document.body).color };
+      const tab = getComputedStyle(
+        document.querySelector('.detail-tab[aria-selected="true"]'),
+      );
+      const action = getComputedStyle(
+        document.querySelector('.detail-actions button[data-action="delete"]'),
+      );
+      return {
+        tabBackground: tab.backgroundColor,
+        tabTopBorder: tab.borderTopWidth,
+        tabIndicator: tab.borderBottomWidth,
+        actionBackground: action.backgroundColor,
+        danger: action.color,
+        text: getComputedStyle(document.body).color,
+      };
     });
     expect(details.tabBackground).toBe("rgba(0, 0, 0, 0)");
     expect(details.tabTopBorder).toBe("0px");
