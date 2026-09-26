@@ -3,11 +3,11 @@
   "id": "com.zync.plugin.pm2-monitor",
   "name": "PM2 Monitor",
   "icon": "icons/process-manager.svg",
-  "version": "2.0.0-beta.23",
+  "version": "2.0.0",
   "description": "Monitor PM2 processes, inspect recent logs, and manage selected processes on the server connected to this pane.",
   "publisher": "com.zync",
   "license": "MIT",
-  "engines": { "zync": ">=2.32.2", "pluginApi": "^2.1.0" },
+  "engines": { "zync": ">=2.33.0", "pluginApi": "^2.1.0" },
   "runtime": { "entry": "worker.js" },
   "contributes": {
     "paneKinds": [

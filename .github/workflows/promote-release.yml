@@ -1,0 +1,74 @@
+name: Promote signed plugin release
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Stable tag with a draft and manually uploaded signed ZIP (e.g. v2.0.0)
+        required: true
+        type: string
+permissions:
+  contents: read
+concurrency:
+  group: pm2-release-refs/tags/${{ inputs.tag }}
+  cancel-in-progress: false
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate stable tag
+        env:
+          RELEASE_TAG: ${{ inputs.tag }}
+        run: '[[ "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]'
+      - uses: actions/checkout@v4
+        with:
+          ref: refs/tags/${{ inputs.tag }}
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run check
+      - name: Download and verify manually signed draft asset
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ inputs.tag }}
+          PM2_PUBLISHER_KEY_ID: ${{ vars.PM2_PUBLISHER_KEY_ID }}
+        run: |
+          test "$(gh release view "$RELEASE_TAG" --json isDraft --jq .isDraft)" = true
+          mkdir signed-download
+          gh release download "$RELEASE_TAG" --pattern "pm2-monitor-${RELEASE_TAG#v}-signed.zip" --dir signed-download
+          node scripts/release.mjs verify "$RELEASE_TAG" "signed-download/pm2-monitor-${RELEASE_TAG#v}-signed.zip"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: verified-pm2-release
+          path: |
+            signed-download/*-signed.zip
+            .release/verified-*/
+          if-no-files-found: error
+  publish:
+    needs: verify
+    runs-on: ubuntu-latest
+    environment: plugin-release
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: verified-pm2-release
+          path: verified
+      - name: Publish only the verified signed artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ inputs.tag }}
+        run: |
+          test "$(gh release view "$RELEASE_TAG" --json isDraft --jq .isDraft)" = true
+          signed_zip=$(find verified -type f -name '*-signed.zip')
+          checksum=$(find verified -type f -name '*-signed.zip.sha256')
+          test -n "$signed_zip" && test -n "$checksum"
+          gh release upload "$RELEASE_TAG" "$signed_zip" "$checksum" --clobber
+          gh release delete-asset "$RELEASE_TAG" "pm2-monitor-${RELEASE_TAG#v}-candidate.zip" --yes
+          gh release delete-asset "$RELEASE_TAG" "pm2-monitor-${RELEASE_TAG#v}-candidate.zip.sha256" --yes
+          gh release edit "$RELEASE_TAG" --draft=false --notes 'Signed PM2 Monitor package. Requires Zync 2.33.0+ with Plugin API 2.1. Trusted marketplace availability requires separate offline registry signing and publication. Signature verification does not establish plugin behavior safety.'

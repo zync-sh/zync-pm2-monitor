@@ -4,7 +4,7 @@ A focused PM2 workspace: inspect the server, find the process, make an intention
 
 ## Try it
 
-This build requires **Zync Plugin API 2.1**, added on `feature/plugin-sandbox-v2` alongside this plugin. Restart/rebuild the native Zync app before installing. A released host with API 2.0 correctly rejects it—even if its desktop version is 2.32.2. The existing marketplace PM2 1.1.0 package is unchanged.
+This build requires **Zync 2.33.0 or newer with Plugin API 2.1**. Restart/rebuild the native Zync app before installing. Hosts with API 2.0 correctly reject it. Marketplace installation additionally requires a host built with the trusted registry URL and public keys. The existing legacy marketplace PM2 1.1.0 package is unchanged.
 
 1. Run `npm ci` and `npm run package` in this repository.
 2. In Zync, use the local plugin installation flow to select `dist` (or the ZIP in it). Unsigned local packages require Developer Mode and explicit permission review.
@@ -48,7 +48,9 @@ See [testing](docs/TESTING.md) for evidence and remaining release checks; [archi
 
 ## Release status
 
-The current plugin build is a local beta candidate retaining `com.zync.plugin.pm2-monitor` for the existing update path. The intended standalone repository is `zync-sh/zync-pm2-monitor`; no GitHub repository or release is created by the build scripts. It uses published `@zync-sh/plugin-sdk@2.1.0-beta.1` and `@zync-sh/plugin-ui@0.1.0-beta.1`. A signed marketplace beta still requires publisher signing, trusted registry staging, and a released compatible API 2.1 host. Keep the existing stable listing until these gates pass.
+See [stable release workflow](docs/RELEASING.md) for tag-triggered candidates, manual publisher signing, protected signed-release promotion and offline registry publication.
+
+Version 2.0.0 is prepared for stable release, retaining `com.zync.plugin.pm2-monitor`. Its repository is `zync-sh/zync-pm2-monitor`; the build scripts do not publish GitHub releases. It uses published `@zync-sh/plugin-sdk@2.1.0-beta.1` and `@zync-sh/plugin-ui@0.1.0-beta.1`. Publication still requires publisher signing, trusted registry staging, and a released compatible API 2.1 host. Keep the legacy listing unchanged so older clients remain supported.
 
 Use the Compact toggle in the pane header to reduce process row spacing without changing data or refresh behavior. Compact rows provide a keyboard-accessible action menu for details, logs and process operations. Density is pane-session state; it does not change other panes. Mutating menu actions use the same native confirmation and process-identity checks as the details view.
 

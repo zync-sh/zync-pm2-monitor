@@ -1,6 +1,6 @@
 {
   "name": "zync-pm2-monitor",
-  "version": "2.0.0-beta.23",
+  "version": "2.0.0",
   "private": true,
   "type": "module",
   "description": "A server-bound PM2 workspace for Zync Manifest v2",
@@ -16,6 +16,8 @@
     "test:states": "playwright test --config tests/browser/bundle.config.js",
     "preview": "node scripts/preview.mjs",
     "package": "npm run check && node scripts/package.mjs",
+    "release:stage": "node scripts/release.mjs stage",
+    "release:verify": "node scripts/release.mjs verify",
     "format": "prettier --write src scripts tests docs *.json *.js *.md",
     "format:check": "prettier --check src scripts tests docs *.json *.js *.md"
   },
